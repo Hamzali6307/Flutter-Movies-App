@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:test_app/services/service_locator.dart';
-import 'package:test_app/services/remote_config_service.dart';
-import 'package:test_app/services/session_manager.dart';
-import 'package:test_app/utils/constants.dart';
+import '../services/service_locator.dart';
+import '../services/remote_config_service.dart';
+import '../utils/constants.dart';
+import '../providers/theme_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -19,89 +18,86 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _startAppFlow();
+    _navigateToNext();
   }
 
-  void _startAppFlow() async {
-    // Show splash branding for 3 seconds
+  void _navigateToNext() async {
+    // Artificial delay for splash feel
     await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
-    
-    // Use SessionManager to determine where the user should go
-    getIt<SessionManager>().startSession(context);
+
+    final remoteConfig = getIt<RemoteConfigService>();
+    if (remoteConfig.isMaintenanceMode) {
+      Navigator.pushReplacementNamed(context, Constants.maintenance);
+      return;
+    }
+
+    final user = Provider.of<User?>(context, listen: false);
+    if (user != null) {
+      Navigator.pushReplacementNamed(context, Constants.mainPage);
+    } else {
+      Navigator.pushReplacementNamed(context, Constants.login);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final splashBackground = getIt<RemoteConfigService>().splashBackgroundUrl;
+    final backgroundUrl = getIt<RemoteConfigService>().splashBackgroundUrl;
+    final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
-      backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Dynamic background from Remote Config
-          Positioned.fill(
-            child: splashBackground.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: splashBackground,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(color: Colors.black),
-                    errorWidget: (context, url, error) => Container(color: Colors.black),
-                  )
-                : Container(color: Colors.black),
-          ),
-          // Dark overlay for contrast
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.3),
-                    Colors.black.withOpacity(0.8),
-                  ],
+          if (backgroundUrl.isNotEmpty)
+            Positioned.fill(
+              child: Image.network(
+                backgroundUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  color: themeProvider.isDarkMode ? Colors.black : Colors.white,
                 ),
               ),
             ),
+          Positioned.fill(
+            child: Container(
+              color: themeProvider.isDarkMode 
+                  ? Colors.black.withOpacity(0.6) 
+                  : Colors.white.withOpacity(0.4),
+            ),
           ),
-          // Branding Content
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Hero(
-                  tag: 'app_logo',
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.redAccent.withOpacity(0.3),
-                          blurRadius: 30,
-                          spreadRadius: 10,
-                        )
-                      ],
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipOval(
+                    child: Image.network(
+                      'https://w7.pngwing.com/pngs/439/879/png-transparent-movie-projector-logo-clapperboard-computer-icons-movie-logo-television-text-logo.png',
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.contain,
                     ),
-                    child: const Icon(Icons.movie_filter_rounded, size: 80, color: Colors.redAccent),
                   ),
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  "HUB MOVIES",
+                const SizedBox(height: 30),
+                Text(
+                  "HUB MOVIE'S",
                   style: TextStyle(
-                    color: Colors.white,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 4,
+                    letterSpacing: 2,
+                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
                   ),
                 ),
-                const SizedBox(height: 60),
+                const SizedBox(height: 50),
                 LoadingAnimationWidget.beat(
                   color: Colors.redAccent,
-                  size: 50,
+                  size: 40,
                 ),
               ],
             ),

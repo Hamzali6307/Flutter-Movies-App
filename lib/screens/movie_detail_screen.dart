@@ -37,8 +37,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: Colors.black,
       body: FutureBuilder<MovieDetail?>(
         future: _movieDetail,
         builder: (context, snapshot) {
@@ -52,7 +54,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           }
           final movie = snapshot.data;
           if (movie == null) {
-            return const Center(child: Text("Error loading details", style: TextStyle(color: Colors.white)));
+            return const Center(child: Text("Error loading details"));
           }
 
           return Stack(
@@ -62,13 +64,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 child: CachedNetworkImage(
                   imageUrl: "${Constants.imageUrl}${movie.posterPath}",
                   fit: BoxFit.cover,
-                  errorWidget: (context, url, error) => Container(color: Colors.black),
+                  errorWidget: (context, url, error) => Container(color: theme.scaffoldBackgroundColor),
                 ),
               ),
               Positioned.fill(
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                  child: Container(color: Colors.black.withOpacity(0.5)),
+                  child: Container(
+                    color: isDark ? Colors.black.withOpacity(0.6) : Colors.white.withOpacity(0.85),
+                  ),
                 ),
               ),
               // Content
@@ -83,7 +87,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                              icon: const Icon(Icons.arrow_back_ios_new),
                               onPressed: () => Navigator.pop(context),
                             ),
                             Consumer<FavouritesProvider>(
@@ -92,7 +96,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 return IconButton(
                                   icon: Icon(
                                     isFavourite ? Icons.favorite : Icons.favorite_border,
-                                    color: isFavourite ? Colors.red : Colors.white,
+                                    color: isFavourite ? Colors.red : null,
                                     size: 28,
                                   ),
                                   onPressed: () => provider.toggleFavourite(movie),
@@ -122,14 +126,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         child: Text(
                           movie.title ?? "",
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                         ),
                       ),
                       const SizedBox(height: 12),
                       Center(
                         child: Text(
                           movie.genres?.map((e) => e.name).join(" • ") ?? "",
-                          style: const TextStyle(color: Colors.white70, fontSize: 14),
+                          style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7), fontSize: 14),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -138,7 +142,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -148,7 +152,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               movie.overview ?? "",
                               maxLines: _isExpanded ? null : 3,
                               overflow: _isExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.5),
+                              style: const TextStyle(fontSize: 15, height: 1.5),
                             ),
                             Align(
                               alignment: Alignment.centerRight,
@@ -170,13 +174,13 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _infoItem("Rating", movie.voteAverage?.toStringAsFixed(1) ?? "N/A"),
-                            _verticalDivider(),
-                            _infoItem("Released", _formatDate(movie.releaseDate)),
-                            _verticalDivider(),
-                            _infoItem("Runtime", "${movie.runtime ?? 'N/A'}m"),
-                            _verticalDivider(),
-                            _infoItem("Adult", movie.adult == true ? "18+" : "All"),
+                            _infoItem(context, "Rating", movie.voteAverage?.toStringAsFixed(1) ?? "N/A"),
+                            _verticalDivider(context),
+                            _infoItem(context, "Released", _formatDate(movie.releaseDate)),
+                            _verticalDivider(context),
+                            _infoItem(context, "Runtime", "${movie.runtime ?? 'N/A'}m"),
+                            _verticalDivider(context),
+                            _infoItem(context, "Adult", movie.adult == true ? "18+" : "All"),
                           ],
                         ),
                       ),
@@ -209,14 +213,18 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       ),
                       const SizedBox(height: 32),
                       // Cast Section
-                      _buildCastSection(),
+                      _buildCastSection(context),
                       const SizedBox(height: 32),
                       // Similar Movies
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.0),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: Text(
                           "Similar Movies",
-                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 20, 
+                            fontWeight: FontWeight.bold,
+                            color: theme.textTheme.titleLarge?.color
+                          ),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -228,14 +236,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Center(
                                 child: LoadingAnimationWidget.beat(
-                                  color: Colors.white24,
+                                  color: Colors.redAccent,
                                   size: 30,
                                 ),
                               );
                             }
                             final movies = snapshot.data?.results ?? [];
                             if (movies.isEmpty) {
-                              return const Center(child: Text("No similar movies found", style: TextStyle(color: Colors.white24)));
+                              return const Center(child: Text("No similar movies found", style: TextStyle(color: Colors.grey)));
                             }
                             return ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -258,7 +266,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                       child: CachedNetworkImage(
                                         imageUrl: "${Constants.imageUrl}${m.posterPath}",
                                         fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(color: Colors.white10),
+                                        placeholder: (context, url) => Container(color: Colors.grey.withOpacity(0.1)),
                                         errorWidget: (context, url, error) => const Icon(Icons.error),
                                       ),
                                     ),
@@ -281,7 +289,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
-  Widget _buildCastSection() {
+  Widget _buildCastSection(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -289,7 +297,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           padding: EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
             "Cast",
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 16),
@@ -301,14 +309,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
                   child: LoadingAnimationWidget.beat(
-                    color: Colors.white24,
+                    color: Colors.redAccent,
                     size: 30,
                   ),
                 );
               }
               final cast = snapshot.data?['cast'] as List? ?? [];
               if (cast.isEmpty) {
-                return const Center(child: Text("No cast info available", style: TextStyle(color: Colors.white24)));
+                return const Center(child: Text("No cast info available", style: TextStyle(color: Colors.grey)));
               }
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
@@ -324,12 +332,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       children: [
                         CircleAvatar(
                           radius: 35,
-                          backgroundColor: Colors.white10,
+                          backgroundColor: Colors.grey.withOpacity(0.2),
                           backgroundImage: profilePath != null 
                               ? NetworkImage("${Constants.imageUrl}$profilePath") 
                               : null,
                           child: profilePath == null 
-                              ? const Icon(Icons.person, color: Colors.white24) 
+                              ? const Icon(Icons.person, color: Colors.grey) 
                               : null,
                         ),
                         const SizedBox(height: 8),
@@ -337,7 +345,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                           actor['name'] ?? "Unknown",
                           maxLines: 2,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          style: const TextStyle(fontSize: 11),
                         ),
                       ],
                     ),
@@ -360,17 +368,17 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     }
   }
 
-  Widget _infoItem(String label, String value) {
+  Widget _infoItem(BuildContext context, String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
         const SizedBox(height: 6),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
       ],
     );
   }
 
-  Widget _verticalDivider() {
-    return Container(height: 30, width: 1, color: Colors.white24);
+  Widget _verticalDivider(BuildContext context) {
+    return Container(height: 30, width: 1, color: Colors.grey.withOpacity(0.3));
   }
 }

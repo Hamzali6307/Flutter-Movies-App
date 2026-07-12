@@ -133,8 +133,10 @@ class _SearchViewState extends State<SearchView> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       body: Column(
         children: [
           Padding(
@@ -142,28 +144,28 @@ class _SearchViewState extends State<SearchView> {
             child: TextField(
               controller: _searchController,
               onChanged: _onSearchChanged,
-              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 hintText: 'Search for movies...',
-                hintStyle: const TextStyle(color: Colors.white60),
-                prefixIcon: const Icon(Icons.search, color: Colors.white60),
+                prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty 
                   ? IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.white60),
+                      icon: const Icon(Icons.clear),
                       onPressed: () {
                         _searchController.clear();
                         _onSearchChanged('');
                       },
                     )
                   : null,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30), 
+                  borderSide: BorderSide.none
+                ),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.1),
+                fillColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
               ),
             ),
           ),
           
-          // Quick Genre Chips
           SizedBox(
             height: 40,
             child: ListView.builder(
@@ -175,9 +177,16 @@ class _SearchViewState extends State<SearchView> {
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    label: Text(genre['name']!, style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    backgroundColor: Colors.white.withOpacity(0.1),
-                    shape: StadiumBorder(side: BorderSide(color: Colors.white.withOpacity(0.1))),
+                    label: Text(
+                      genre['name']!, 
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white : Colors.black87,
+                      )
+                    ),
+                    backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                    side: BorderSide.none,
+                    shape: const StadiumBorder(),
                     onPressed: () {
                       _searchController.clear();
                       _loadMovies(genreOverride: genre['id']);
@@ -198,12 +207,10 @@ class _SearchViewState extends State<SearchView> {
                     ),
                   )
                 : _searchResults.isEmpty
-                    ? Center(
+                    ? const Center(
                         child: Text(
-                          _searchController.text.isEmpty && widget.initialGenreId == null
-                              ? "Type to discover movies!"
-                              : "No results found.",
-                          style: const TextStyle(color: Colors.grey),
+                          "No results found.",
+                          style: TextStyle(color: Colors.grey),
                         ),
                       )
                     : GridView.builder(
@@ -227,14 +234,22 @@ class _SearchViewState extends State<SearchView> {
                           }
                           final movie = _searchResults[index];
                           return GestureDetector(
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => MovieDetailScreen(movieId: movie.id!.toInt()))),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: CachedNetworkImage(
-                                imageUrl: movie.posterPath != null ? "${Constants.imageUrl}${movie.posterPath}" : "https://via.placeholder.com/150",
-                                fit: BoxFit.cover,
-                                placeholder: (context, url) => Container(color: Colors.grey[900]),
-                                errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white24),
+                            onTap: () => Navigator.push(
+                              context, 
+                              MaterialPageRoute(builder: (context) => MovieDetailScreen(movieId: movie.id!.toInt()))
+                            ),
+                            child: Hero(
+                              tag: 'movie_${movie.id}',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: CachedNetworkImage(
+                                  imageUrl: movie.posterPath != null 
+                                      ? "${Constants.imageUrl}${movie.posterPath}" 
+                                      : "https://via.placeholder.com/150",
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(color: isDark ? Colors.grey[900] : Colors.grey[200]),
+                                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                                ),
                               ),
                             ),
                           );

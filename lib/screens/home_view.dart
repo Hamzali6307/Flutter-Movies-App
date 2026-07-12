@@ -71,15 +71,20 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildTrendingSection() {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: RichText(
-            text: const TextSpan(
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-              children: [
+            text: TextSpan(
+              style: TextStyle(
+                fontSize: 22, 
+                fontWeight: FontWeight.bold, 
+                color: theme.textTheme.titleLarge?.color
+              ),
+              children: const [
                 TextSpan(text: "Trending "),
                 TextSpan(text: "Now", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal)),
               ],
@@ -121,7 +126,7 @@ class _HomeViewState extends State<HomeView> {
                               height: 300,
                               width: 200,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(color: Colors.grey[900]),
+                              placeholder: (context, url) => Container(color: Colors.grey.withOpacity(0.1)),
                               errorWidget: (context, url, error) => const Icon(Icons.error),
                             ),
                           ),
@@ -130,7 +135,7 @@ class _HomeViewState extends State<HomeView> {
                             movie.title ?? "",
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                           Text(
                             movie.genres?.map((e) => e.name).join(" / ") ?? "Movie",
@@ -226,6 +231,7 @@ class _PaginatedCategoryRowState extends State<_PaginatedCategoryRow> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -236,14 +242,21 @@ class _PaginatedCategoryRowState extends State<_PaginatedCategoryRow> {
             children: [
               RichText(
                 text: TextSpan(
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: TextStyle(
+                    fontSize: 20, 
+                    fontWeight: FontWeight.bold, 
+                    color: theme.textTheme.titleLarge?.color
+                  ),
                   children: [
                     TextSpan(text: "${widget.title} "),
                     TextSpan(text: widget.subtitle, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.normal)),
                   ],
                 ),
               ),
-              TextButton(onPressed: widget.onSeeAll, child: const Text("See All", style: TextStyle(color: Colors.grey))),
+              TextButton(
+                onPressed: widget.onSeeAll, 
+                child: const Text("See All", style: TextStyle(color: Colors.grey))
+              ),
             ],
           ),
         ),
@@ -284,8 +297,8 @@ class _PaginatedCategoryRowState extends State<_PaginatedCategoryRow> {
                         child: CachedNetworkImage(
                           imageUrl: "${Constants.imageUrl}${movie.posterPath}",
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(color: Colors.white10),
-                          errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white24),
+                          placeholder: (context, url) => Container(color: Colors.grey.withOpacity(0.1)),
+                          errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                         ),
                       ),
                     ),

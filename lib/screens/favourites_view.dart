@@ -12,7 +12,7 @@ class FavouritesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      // Background color is now handled by the global theme
       body: Consumer<FavouritesProvider>(
         builder: (context, provider, child) {
           final favourites = provider.favourites;
@@ -22,11 +22,11 @@ class FavouritesView extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 80, color: Colors.white24),
+                  Icon(Icons.favorite_border, size: 80, color: Colors.grey),
                   SizedBox(height: 16),
                   Text(
                     "No favourites added yet!",
-                    style: TextStyle(color: Colors.white70, fontSize: 16),
+                    style: TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 ],
               ),
@@ -67,7 +67,7 @@ class FavouritesView extends StatelessWidget {
                               width: double.infinity,
                               height: double.infinity,
                               placeholder: (context, url) => Container(
-                                color: Colors.grey[900],
+                                color: Colors.grey.withOpacity(0.1),
                                 child: Center(
                                   child: LoadingAnimationWidget.beat(
                                     color: Colors.redAccent,
@@ -75,7 +75,7 @@ class FavouritesView extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.white24),
+                              errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                             ),
                           ),
                           Positioned(
@@ -101,7 +101,7 @@ class FavouritesView extends StatelessWidget {
                       movie.title ?? "",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),

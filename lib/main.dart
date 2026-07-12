@@ -7,6 +7,7 @@ import 'package:test_app/services/service_locator.dart';
 import 'package:test_app/services/auth_service.dart';
 import 'package:test_app/services/remote_config_service.dart';
 import 'package:test_app/providers/favourites_provider.dart';
+import 'package:test_app/providers/theme_provider.dart';
 import 'package:test_app/screens/splash_screen.dart';
 import 'package:test_app/screens/login_screen.dart';
 import 'package:test_app/screens/signup_screen.dart';
@@ -27,7 +28,19 @@ void main() async {
   // 1. Synchronously register all services immediately.
   setupServiceLocator();
   
-  runApp(const AppBootstrapper());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => FavouritesProvider()),
+        StreamProvider.value(
+          value: getIt<AuthService>().user,
+          initialData: null,
+        ),
+      ],
+      child: const AppBootstrapper(),
+    ),
+  );
 }
 
 class AppBootstrapper extends StatefulWidget {
@@ -67,11 +80,15 @@ class _AppBootstrapperState extends State<AppBootstrapper> {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     if (!_initialized) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
+        themeMode: themeProvider.themeMode,
+        darkTheme: ThemeData.dark(),
+        theme: ThemeData.light(),
         home: Scaffold(
-          backgroundColor: Colors.black,
           body: Center(
             child: LoadingAnimationWidget.beat(
               color: Colors.redAccent,
@@ -82,34 +99,39 @@ class _AppBootstrapperState extends State<AppBootstrapper> {
       );
     }
 
-    return MultiProvider(
-      providers: [
-        StreamProvider.value(
-          value: getIt<AuthService>().user,
-          initialData: null,
+    return MaterialApp(
+      title: 'Hub Movies',
+      debugShowCheckedModeBanner: false,
+      themeMode: themeProvider.themeMode,
+      theme: ThemeData(
+        brightness: Brightness.light,
+        primarySwatch: Colors.red,
+        useMaterial3: true,
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
-        ChangeNotifierProvider(
-          create: (context) => FavouritesProvider(),
-        ),
-      ],
-      child: MaterialApp(
-        title: 'Hub Movies',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          primarySwatch: Colors.red,
-          useMaterial3: true,
-          scaffoldBackgroundColor: const Color(0xFF121212),
-        ),
-        initialRoute: Constants.splash,
-        routes: {
-          Constants.splash: (context) => const SplashScreen(),
-          Constants.login: (context) => const LoginScreen(),
-          Constants.signup: (context) => const SignUpScreen(),
-          Constants.mainPage: (context) => const MainPage(),
-          Constants.maintenance: (context) => const MaintenanceScreen(),
-        },
       ),
+      darkTheme: ThemeData(
+        brightness: Brightness.dark,
+        primarySwatch: Colors.red,
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF1E1E1E),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+      ),
+      initialRoute: Constants.splash,
+      routes: {
+        Constants.splash: (context) => const SplashScreen(),
+        Constants.login: (context) => const LoginScreen(),
+        Constants.signup: (context) => const SignUpScreen(),
+        Constants.mainPage: (context) => const MainPage(),
+        Constants.maintenance: (context) => const MaintenanceScreen(),
+      },
     );
   }
 }

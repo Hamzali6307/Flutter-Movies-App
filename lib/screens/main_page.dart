@@ -39,10 +39,14 @@ class _MainPageState extends State<MainPage> {
 
   String _getAppBarTitle() {
     switch (_selectedIndex) {
-      case 1: return 'Search';
-      case 2: return 'Favourites';
-      case 3: return 'Settings';
-      default: return 'Hub Movie\'s';
+      case 1:
+        return 'Search';
+      case 2:
+        return 'Favourites';
+      case 3:
+        return 'Settings';
+      default:
+        return 'Hub Movie\'s';
     }
   }
 
@@ -61,16 +65,13 @@ class _MainPageState extends State<MainPage> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
           _getAppBarTitle(),
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        // Redundant search icon removed from here
         elevation: 0,
-        backgroundColor: const Color(0xFF1E1E1E),
         surfaceTintColor: Colors.transparent,
       ),
       body: IndexedStack(
@@ -87,10 +88,9 @@ class _MainPageState extends State<MainPage> {
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.redAccent,
         unselectedItemColor: Colors.grey,
-        backgroundColor: Colors.black,
         type: BottomNavigationBarType.fixed,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         onTap: _onItemTapped,
       ),
     );
