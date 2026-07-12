@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🎬 TMDB Flutter Learning App
 
 A Flutter application built for learning modern Flutter development using The Movie Database (TMDB) API.
@@ -74,3 +75,22 @@ The main goal of this project is to improve Flutter development skills by implem
 ## ⚠️ Disclaimer
 
 This project is for educational purposes only and uses data provided by TMDB.
+=======
+# test_app
+
+A new Flutter project.
+
+## Getting Started
+
+This project is a starting point for a Flutter application.
+
+A few resources to get you started if this is your first Flutter project:
+
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
+>>>>>>> 8f5c0d0 (Initial commit)
