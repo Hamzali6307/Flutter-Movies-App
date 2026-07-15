@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_app/l10n/app_localizations.dart';
 import 'home_view.dart';
 import 'settings_view.dart';
 import 'search_view.dart';
@@ -37,21 +38,24 @@ class _MainPageState extends State<MainPage> {
     });
   }
 
-  String _getAppBarTitle() {
+  String _getAppBarTitle(AppLocalizations l10n) {
     switch (_selectedIndex) {
       case 1:
-        return 'Search';
+        return l10n.search;
       case 2:
-        return 'Favourites';
+        return l10n.favourites;
       case 3:
-        return 'Settings';
+        return l10n.settings;
       default:
-        return 'Hub Movie\'s';
+        return l10n.appTitle;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    
     final List<Widget> views = [
       HomeView(onSeeAll: _navigateToSearch),
       SearchView(
@@ -68,7 +72,7 @@ class _MainPageState extends State<MainPage> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
-          _getAppBarTitle(),
+          _getAppBarTitle(l10n),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
@@ -79,11 +83,11 @@ class _MainPageState extends State<MainPage> {
         children: views,
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favourites'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Settings'),
+        items: <BottomNavigationBarItem>[
+          BottomNavigationBarItem(icon: const Icon(Icons.home), label: l10n.home),
+          BottomNavigationBarItem(icon: const Icon(Icons.search), label: l10n.search),
+          BottomNavigationBarItem(icon: const Icon(Icons.favorite), label: l10n.favourites),
+          BottomNavigationBarItem(icon: const Icon(Icons.person), label: l10n.settings),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.redAccent,

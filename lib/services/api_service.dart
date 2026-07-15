@@ -25,11 +25,12 @@ class ApiService {
     }
   }
 
-  Future<Movies?> getMovies({required int page, String? genreId}) async {
+  Future<Movies?> getMovies({required int page, String? genreId, String language = 'en-US'}) async {
     try {
       final response = await _dio.get('discover/movie', queryParameters: {
         'api_key': Constants.apiKey,
         'page': page,
+        'language': language,
         if (genreId != null) 'with_genres': genreId,
       });
       return Movies.fromJson(response.data);
@@ -39,12 +40,13 @@ class ApiService {
     }
   }
 
-  Future<Movies?> searchMovies(String query, {int page = 1}) async {
+  Future<Movies?> searchMovies(String query, {int page = 1, String language = 'en-US'}) async {
     try {
       final response = await _dio.get('search/movie', queryParameters: {
         'api_key': Constants.apiKey,
         'query': query,
         'page': page,
+        'language': language,
       });
       return Movies.fromJson(response.data);
     } catch (e) {
@@ -53,10 +55,11 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>?> getMovieCredits(int movieId) async {
+  Future<Map<String, dynamic>?> getMovieCredits(int movieId, {String language = 'en-US'}) async {
     try {
       final response = await _dio.get('movie/$movieId/credits', queryParameters: {
         'api_key': Constants.apiKey,
+        'language': language,
       });
       return response.data;
     } catch (e) {
@@ -65,10 +68,11 @@ class ApiService {
     }
   }
 
-  Future<Movies?> getSimilarMovies(int movieId) async {
+  Future<Movies?> getSimilarMovies(int movieId, {String language = 'en-US'}) async {
     try {
       final response = await _dio.get('movie/$movieId/similar', queryParameters: {
         'api_key': Constants.apiKey,
+        'language': language,
       });
       return Movies.fromJson(response.data);
     } catch (e) {
@@ -77,11 +81,12 @@ class ApiService {
     }
   }
 
-  Future<Movies?> getTopRatedMovies({required int page}) async {
+  Future<Movies?> getTopRatedMovies({required int page, String language = 'en-US'}) async {
     try {
       final response = await _dio.get('movie/top_rated', queryParameters: {
         'api_key': Constants.apiKey,
         'page': page,
+        'language': language,
       });
       return Movies.fromJson(response.data);
     } catch (e) {
@@ -90,10 +95,11 @@ class ApiService {
     }
   }
 
-  Future<VideoPlayAbleLink?> getVideoPlayAbleLink(int movieId) async {
+  Future<VideoPlayAbleLink?> getVideoPlayAbleLink(int movieId, {String language = 'en-US'}) async {
     try {
       final response = await _dio.get('movie/$movieId/videos', queryParameters: {
         'api_key': Constants.apiKey,
+        'language': language,
       });
       return VideoPlayAbleLink.fromJson(response.data);
     } catch (e) {
@@ -102,10 +108,11 @@ class ApiService {
     }
   }
 
-  Future<MovieDetail?> getMovieDetail(String movieId) async {
+  Future<MovieDetail?> getMovieDetail(String movieId, {String language = 'en-US'}) async {
     try {
       final response = await _dio.get('movie/$movieId', queryParameters: {
         'api_key': Constants.apiKey,
+        'language': language,
       });
       return MovieDetail.fromJson(response.data);
     } catch (e) {
@@ -114,10 +121,11 @@ class ApiService {
     }
   }
 
-  Future<TrendingMovies?> getTrendingMovies(String timeWindow) async {
+  Future<TrendingMovies?> getTrendingMovies(String timeWindow, {String language = 'en-US'}) async {
     try {
       final response = await _dio.get('trending/movie/$timeWindow', queryParameters: {
         'api_key': Constants.apiKey,
+        'language': language,
       });
       return TrendingMovies.fromJson(response.data);
     } catch (e) {

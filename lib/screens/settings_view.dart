@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:test_app/l10n/app_localizations.dart';
 import '../services/service_locator.dart';
 import '../services/session_manager.dart';
 import '../providers/theme_provider.dart';
+import '../providers/language_provider.dart';
 
 class SettingsView extends StatelessWidget {
   const SettingsView({super.key});
@@ -12,6 +14,21 @@ class SettingsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = Provider.of<User?>(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final languageProvider = Provider.of<LanguageProvider>(context);
+    final l10n = AppLocalizations.of(context);
+    
+    if (l10n == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    String _getLanguageName(String code) {
+      switch (code) {
+        case 'en': return 'English';
+        case 'hi': return 'Hindi (हिंदी)';
+        case 'ur': return 'Urdu (اردو)';
+        default: return code;
+      }
+    }
 
     return ListView(
       padding: const EdgeInsets.symmetric(vertical: 20),
@@ -24,7 +41,7 @@ class SettingsView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.redAccent.withOpacity(0.2),
+                  color: Colors.redAccent.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
                 child: const CircleAvatar(
@@ -37,9 +54,9 @@ class SettingsView extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "My Profile",
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Text(
+                    l10n.myProfile,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -57,11 +74,11 @@ class SettingsView extends StatelessWidget {
         ),
 
         // Appearance Section
-        const Padding(
-          padding: EdgeInsets.only(left: 16, top: 16, bottom: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
           child: Text(
-            "Appearance",
-            style: TextStyle(
+            l10n.appearance,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.redAccent,
@@ -73,64 +90,111 @@ class SettingsView extends StatelessWidget {
             themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
             color: themeProvider.isDarkMode ? Colors.amber : Colors.orange,
           ),
-          title: const Text("Dark Theme"),
-          subtitle: Text(themeProvider.isDarkMode ? "Dark Mode Enabled" : "Light Mode Enabled"),
+          title: Text(l10n.darkTheme),
+          subtitle: Text(themeProvider.isDarkMode ? "Enabled" : "Disabled"),
           value: themeProvider.isDarkMode,
           activeColor: Colors.redAccent,
           onChanged: (value) {
             themeProvider.toggleTheme();
           },
         ),
+        
+        // Language Selection
+        ListTile(
+          leading: const Icon(Icons.language, color: Colors.blue),
+          title: Text(l10n.language),
+          subtitle: Text(_getLanguageName(languageProvider.locale.languageCode)),
+          trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+          onTap: () => _showLanguageDialog(context, languageProvider),
+        ),
+
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.0),
           child: Divider(height: 1),
         ),
 
         // General Section
-        const Padding(
-          padding: EdgeInsets.only(left: 16, top: 16, bottom: 8),
+        Padding(
+          padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
           child: Text(
-            "General",
-            style: TextStyle(
+            l10n.general,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.redAccent,
             ),
           ),
         ),
-        _buildSettingItem(context, Icons.privacy_tip_outlined, "Privacy Policy", () {}),
-        _buildSettingItem(context, Icons.info_outline, "About Us", () {}),
-        _buildSettingItem(context, Icons.help_outline, "Help & Support", () {}),
-        _buildSettingItem(context, Icons.verified_outlined, "Version 1.0.0", null),
+        _buildSettingItem(context, Icons.privacy_tip_outlined, l10n.privacyPolicy, () {}),
+        _buildSettingItem(context, Icons.info_outline, l10n.aboutUs, () {}),
+        _buildSettingItem(context, Icons.help_outline, l10n.helpSupport, () {}),
+        _buildSettingItem(context, Icons.verified_outlined, "${l10n.version} 1.0.0", null),
         const SizedBox(height: 20),
         _buildSettingItem(
           context,
           Icons.logout, 
-          "Logout", 
-          () => _showLogoutDialog(context), 
+          l10n.logout, 
+          () => _showLogoutDialog(context, l10n), 
           isDestructive: true
         ),
       ],
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLanguageDialog(BuildContext context, LanguageProvider provider) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Logout"),
-        content: const Text("Are you sure you want to logout?"),
+        title: const Text("Select Language"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildLanguageOption(context, provider, "English", 'en'),
+            _buildLanguageOption(context, provider, "Hindi (हिंदी)", 'hi'),
+            _buildLanguageOption(context, provider, "Urdu (اردو)", 'ur'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(BuildContext context, LanguageProvider provider, String title, String code) {
+    return ListTile(
+      title: Text(title),
+      leading: Radio<String>(
+        value: code,
+        groupValue: provider.locale.languageCode,
+        onChanged: (value) {
+          if (value != null) {
+            provider.setLanguage(value);
+          }
+          Navigator.pop(context);
+        },
+      ),
+      onTap: () {
+        provider.setLanguage(code);
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context, AppLocalizations l10n) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.logout),
+        content: Text(l10n.logoutConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+            child: Text(l10n.cancel),
           ),
           ElevatedButton(
             onPressed: () async {
               await getIt<SessionManager>().endSession(context);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-            child: const Text("Logout", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text(l10n.logout, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),

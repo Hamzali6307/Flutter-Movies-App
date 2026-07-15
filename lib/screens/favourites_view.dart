@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import '../providers/favourites_provider.dart';
-import '../utils/constants.dart';
+import 'package:test_app/l10n/app_localizations.dart';
+import 'package:test_app/providers/favourites_provider.dart';
+import 'package:test_app/utils/constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'movie_detail_screen.dart';
+import 'package:test_app/screens/movie_detail_screen.dart';
 
 class FavouritesView extends StatelessWidget {
   const FavouritesView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    
     return Scaffold(
-      // Background color is now handled by the global theme
       body: Consumer<FavouritesProvider>(
         builder: (context, provider, child) {
           final favourites = provider.favourites;
 
           if (favourites.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.favorite_border, size: 80, color: Colors.grey),
-                  SizedBox(height: 16),
+                  const Icon(Icons.favorite_border, size: 80, color: Colors.grey),
+                  const SizedBox(height: 16),
                   Text(
-                    "No favourites added yet!",
-                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                    l10n.noFavourites,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
                   ),
                 ],
               ),
@@ -46,12 +49,14 @@ class FavouritesView extends StatelessWidget {
               final movie = favourites[index];
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => MovieDetailScreen(movieId: movie.id!),
-                    ),
-                  );
+                  if (movie.id != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MovieDetailScreen(movieId: movie.id!),
+                      ),
+                    );
+                  }
                 },
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +72,7 @@ class FavouritesView extends StatelessWidget {
                               width: double.infinity,
                               height: double.infinity,
                               placeholder: (context, url) => Container(
-                                color: Colors.grey.withOpacity(0.1),
+                                color: Colors.grey.withValues(alpha: 0.1),
                                 child: Center(
                                   child: LoadingAnimationWidget.beat(
                                     color: Colors.redAccent,
@@ -86,7 +91,7 @@ class FavouritesView extends StatelessWidget {
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.5),
+                                  color: Colors.black.withValues(alpha: 0.5),
                                   shape: BoxShape.circle,
                                 ),
                                 child: const Icon(Icons.favorite, color: Colors.red, size: 20),

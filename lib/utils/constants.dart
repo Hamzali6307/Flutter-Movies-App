@@ -7,7 +7,7 @@ class Constants {
   static const String myLogs = "my_logs";
   static const String signup = "signup_screen";
   static const String mainPage = "main_page_screen";
-  static const String splash = "splash_screen";
+  static const String splash = "/";
   static const String maintenance = "maintenance_screen";
 
   // Securely fetch from .env file at runtime. 

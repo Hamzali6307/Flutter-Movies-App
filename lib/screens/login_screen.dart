@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import 'package:test_app/services/service_locator.dart';
-import 'package:test_app/services/remote_config_service.dart';
-import 'package:test_app/services/auth_service.dart';
-import 'package:test_app/utils/constants.dart';
+import 'package:test_app/l10n/app_localizations.dart';
+import '../services/service_locator.dart';
+import '../services/remote_config_service.dart';
+import '../services/auth_service.dart';
+import '../utils/constants.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  void _login() async {
+  void _login(AppLocalizations l10n) async {
     setState(() => _isLoading = true);
     final user = await getIt<AuthService>().login(
       _emailController.text.trim(),
@@ -31,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login Failed')),
+          SnackBar(content: Text(l10n.loginFailed)),
         );
       }
     }
@@ -40,6 +41,8 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final backgroundUrl = getIt<RemoteConfigService>().authBackgroundUrl;
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       body: Stack(
@@ -57,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
           // Content
@@ -85,9 +88,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 50),
-                const Text(
-                  "Let's\nGet In",
-                  style: TextStyle(
+                Text(
+                  l10n.letGetIn,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -97,13 +100,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextField(
                   controller: _emailController,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Email',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
+                  decoration: InputDecoration(
+                    hintText: l10n.email,
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white70),
                     ),
-                    focusedBorder: UnderlineInputBorder(
+                    focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),
                     ),
                   ),
@@ -113,14 +116,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _passwordController,
                   obscureText: true,
                   style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: 'Password',
-                    hintStyle: TextStyle(color: Colors.white70),
-                    suffixIcon: Icon(Icons.lock_outline, color: Colors.white70),
-                    enabledBorder: UnderlineInputBorder(
+                  decoration: InputDecoration(
+                    hintText: l10n.password,
+                    hintStyle: const TextStyle(color: Colors.white70),
+                    suffixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                    enabledBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white70),
                     ),
-                    focusedBorder: UnderlineInputBorder(
+                    focusedBorder: const UnderlineInputBorder(
                       borderSide: BorderSide(color: Colors.white),
                     ),
                   ),
@@ -129,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
+                    onPressed: _isLoading ? null : () => _login(l10n),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: Colors.black,
@@ -139,11 +142,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
                     child: _isLoading
-                        ? LoadingAnimationWidget.beat(
-                            color: Colors.black,
+                        ? LoadingAnimationWidget.halfTriangleDot(
+                            color: Colors.red,
                             size: 24,
                           )
-                        : const Text('Login'),
+                        : Text(l10n.login),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -152,9 +155,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () {
                       Navigator.pushNamed(context, Constants.signup);
                     },
-                    child: const Text(
-                      'Register Account!',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    child: Text(
+                      l10n.registerAccount,
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),

@@ -1,103 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:test_app/services/service_locator.dart';
 import 'package:test_app/services/auth_service.dart';
 import 'package:test_app/services/remote_config_service.dart';
 import 'package:test_app/providers/favourites_provider.dart';
 import 'package:test_app/providers/theme_provider.dart';
+import 'package:test_app/providers/language_provider.dart';
 import 'package:test_app/screens/splash_screen.dart';
 import 'package:test_app/screens/login_screen.dart';
 import 'package:test_app/screens/signup_screen.dart';
 import 'package:test_app/screens/main_page.dart';
 import 'package:test_app/screens/maintenance_screen.dart';
 import 'package:test_app/utils/constants.dart';
+import 'package:test_app/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Load environment variables
+  // 1. Initialize Firebase
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+  }
+
+  // 2. Load Environment Variables
   try {
     await dotenv.load(fileName: ".env");
   } catch (e) {
     debugPrint("Error loading .env file: $e");
   }
 
-  // 1. Synchronously register all services immediately.
+  // 3. Setup Service Locator
   setupServiceLocator();
+
+  // 4. Initialize Remote Config
+  try {
+    await getIt<RemoteConfigService>().initialize();
+  } catch (e) {
+    debugPrint("Remote Config initialization failed: $e");
+  }
   
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => FavouritesProvider()),
-        StreamProvider.value(
+        StreamProvider<User?>.value(
           value: getIt<AuthService>().user,
           initialData: null,
         ),
       ],
-      child: const AppBootstrapper(),
+      child: const HubMoviesApp(),
     ),
   );
 }
 
-class AppBootstrapper extends StatefulWidget {
-  const AppBootstrapper({super.key});
-
-  @override
-  State<AppBootstrapper> createState() => _AppBootstrapperState();
-}
-
-class _AppBootstrapperState extends State<AppBootstrapper> {
-  bool _initialized = false;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    try {
-      // 2. Initialize Firebase with a timeout.
-      await Firebase.initializeApp().timeout(const Duration(seconds: 10));
-      
-      // 3. Initialize Remote Config once Firebase is ready
-      await getIt<RemoteConfigService>().initialize();
-      
-    } catch (e) {
-      debugPrint("Startup Warning (Firebase/Services): $e");
-      _errorMessage = e.toString();
-    } finally {
-      if (mounted) {
-        setState(() => _initialized = true);
-      }
-    }
-  }
+class HubMoviesApp extends StatelessWidget {
+  const HubMoviesApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-
-    if (!_initialized) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        themeMode: themeProvider.themeMode,
-        darkTheme: ThemeData.dark(),
-        theme: ThemeData.light(),
-        home: Scaffold(
-          body: Center(
-            child: LoadingAnimationWidget.beat(
-              color: Colors.redAccent,
-              size: 50,
-            ),
-          ),
-        ),
-      );
-    }
+    final languageProvider = Provider.of<LanguageProvider>(context);
 
     return MaterialApp(
       title: 'Hub Movies',
@@ -124,6 +93,9 @@ class _AppBootstrapperState extends State<AppBootstrapper> {
           elevation: 0,
         ),
       ),
+      locale: languageProvider.locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       initialRoute: Constants.splash,
       routes: {
         Constants.splash: (context) => const SplashScreen(),

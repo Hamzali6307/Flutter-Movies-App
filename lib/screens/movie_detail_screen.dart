@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:test_app/l10n/app_localizations.dart';
 import 'package:test_app/models/movie_detail.dart';
 import 'package:test_app/models/movies.dart';
 import 'package:test_app/services/api_service.dart';
 import 'package:test_app/services/service_locator.dart';
 import 'package:test_app/providers/favourites_provider.dart';
+import 'package:test_app/providers/language_provider.dart';
 import 'package:test_app/utils/constants.dart';
 import 'package:test_app/screens/video_player_screen.dart';
 
@@ -21,24 +23,43 @@ class MovieDetailScreen extends StatefulWidget {
 }
 
 class _MovieDetailScreenState extends State<MovieDetailScreen> {
-  late Future<MovieDetail?> _movieDetail;
-  late Future<Movies?> _similarMovies;
-  late Future<Map<String, dynamic>?> _credits;
+  Future<MovieDetail?>? _movieDetail;
+  Future<Movies?>? _similarMovies;
+  Future<Map<String, dynamic>?>? _credits;
   bool _isExpanded = false;
+  String? _lastLanguageCode;
 
   @override
-  void initState() {
-    super.initState();
-    final api = getIt<ApiService>();
-    _movieDetail = api.getMovieDetail(widget.movieId.toString());
-    _similarMovies = api.getSimilarMovies(widget.movieId);
-    _credits = api.getMovieCredits(widget.movieId);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = Provider.of<LanguageProvider>(context).locale.languageCode;
+    
+    if (_lastLanguageCode != languageCode) {
+      _lastLanguageCode = languageCode;
+      final tmdbLang = _getTmdbLanguage(languageCode);
+      final api = getIt<ApiService>();
+      
+      _movieDetail = api.getMovieDetail(widget.movieId.toString(), language: tmdbLang);
+      _similarMovies = api.getSimilarMovies(widget.movieId, language: tmdbLang);
+      _credits = api.getMovieCredits(widget.movieId, language: tmdbLang);
+    }
   }
+
+  String _getTmdbLanguage(String code) => code == 'hi' ? 'hi-IN' : 'en-US';
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+
+    if (l10n == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return Scaffold(
       body: FutureBuilder<MovieDetail?>(
@@ -54,12 +75,11 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
           }
           final movie = snapshot.data;
           if (movie == null) {
-            return const Center(child: Text("Error loading details"));
+            return Center(child: Text(l10n.errorLoadingDetails));
           }
 
           return Stack(
             children: [
-              // Background Blurred Image
               Positioned.fill(
                 child: CachedNetworkImage(
                   imageUrl: "${Constants.imageUrl}${movie.posterPath}",
@@ -71,11 +91,10 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                   child: Container(
-                    color: isDark ? Colors.black.withOpacity(0.6) : Colors.white.withOpacity(0.85),
+                    color: isDark ? Colors.black.withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.85),
                   ),
                 ),
               ),
-              // Content
               SafeArea(
                 child: SingleChildScrollView(
                   child: Column(
@@ -92,7 +111,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             ),
                             Consumer<FavouritesProvider>(
                               builder: (context, provider, child) {
-                                final isFavourite = provider.isFavourite(movie.id!);
+                                final isFavourite = provider.isFavourite(movie.id ?? 0);
                                 return IconButton(
                                   icon: Icon(
                                     isFavourite ? Icons.favorite : Icons.favorite_border,
@@ -133,16 +152,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       Center(
                         child: Text(
                           movie.genres?.map((e) => e.name).join(" • ") ?? "",
-                          style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7), fontSize: 14),
+                          style: TextStyle(color: theme.textTheme.bodyMedium?.color?.withValues(alpha: 0.7), fontSize: 14),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Overview Section
                       Container(
                         margin: const EdgeInsets.symmetric(horizontal: 20),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                          color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Column(
@@ -159,7 +177,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                               child: TextButton(
                                 onPressed: () => setState(() => _isExpanded = !_isExpanded),
                                 child: Text(
-                                  _isExpanded ? "Read Less" : "Read More",
+                                  _isExpanded ? l10n.readLess : l10n.readMore,
                                   style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
                                 ),
                               ),
@@ -168,24 +186,22 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // Info Grid
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _infoItem(context, "Rating", movie.voteAverage?.toStringAsFixed(1) ?? "N/A"),
+                            _infoItem(context, l10n.rating, movie.voteAverage?.toStringAsFixed(1) ?? "N/A"),
                             _verticalDivider(context),
-                            _infoItem(context, "Released", _formatDate(movie.releaseDate)),
+                            _infoItem(context, l10n.released, _formatDate(movie.releaseDate)),
                             _verticalDivider(context),
-                            _infoItem(context, "Runtime", "${movie.runtime ?? 'N/A'}m"),
+                            _infoItem(context, l10n.runtime, "${movie.runtime ?? 'N/A'}m"),
                             _verticalDivider(context),
-                            _infoItem(context, "Adult", movie.adult == true ? "18+" : "All"),
+                            _infoItem(context, l10n.adult, movie.adult == true ? "18+" : "All"),
                           ],
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Action Buttons
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: Row(
@@ -193,12 +209,14 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             Expanded(
                               child: ElevatedButton.icon(
                                 icon: const Icon(Icons.play_arrow),
-                                label: const Text("Watch Now", style: TextStyle(fontWeight: FontWeight.bold)),
+                                label: Text(l10n.watchNow, style: const TextStyle(fontWeight: FontWeight.bold)),
                                 onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => VideoPlayerScreen(movieId: movie.id!)),
-                                  );
+                                  if (movie.id != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => VideoPlayerScreen(movieId: movie.id!)),
+                                    );
+                                  }
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.redAccent,
@@ -212,14 +230,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      // Cast Section
-                      _buildCastSection(context),
+                      _buildCastSection(context, l10n),
                       const SizedBox(height: 32),
-                      // Similar Movies
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: Text(
-                          "Similar Movies",
+                          l10n.similarMovies,
                           style: TextStyle(
                             fontSize: 20, 
                             fontWeight: FontWeight.bold,
@@ -243,7 +259,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                             }
                             final movies = snapshot.data?.results ?? [];
                             if (movies.isEmpty) {
-                              return const Center(child: Text("No similar movies found", style: TextStyle(color: Colors.grey)));
+                              return Center(child: Text(l10n.noSimilarMovies, style: const TextStyle(color: Colors.grey)));
                             }
                             return ListView.builder(
                               scrollDirection: Axis.horizontal,
@@ -253,10 +269,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                 final m = movies[index];
                                 return GestureDetector(
                                   onTap: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => MovieDetailScreen(movieId: m.id!.toInt())),
-                                    );
+                                    if (m.id != null) {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => MovieDetailScreen(movieId: m.id!.toInt())),
+                                      );
+                                    }
                                   },
                                   child: Container(
                                     width: 130,
@@ -266,7 +284,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                                       child: CachedNetworkImage(
                                         imageUrl: "${Constants.imageUrl}${m.posterPath}",
                                         fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(color: Colors.grey.withOpacity(0.1)),
+                                        placeholder: (context, url) => Container(color: Colors.grey.withValues(alpha: 0.1)),
                                         errorWidget: (context, url, error) => const Icon(Icons.error),
                                       ),
                                     ),
@@ -289,15 +307,15 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
     );
   }
 
-  Widget _buildCastSection(BuildContext context) {
+  Widget _buildCastSection(BuildContext context, AppLocalizations l10n) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
           child: Text(
-            "Cast",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            l10n.cast,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(height: 16),
@@ -316,12 +334,12 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
               }
               final cast = snapshot.data?['cast'] as List? ?? [];
               if (cast.isEmpty) {
-                return const Center(child: Text("No cast info available", style: TextStyle(color: Colors.grey)));
+                return Center(child: Text(l10n.noCastInfo, style: const TextStyle(color: Colors.grey)));
               }
               return ListView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: cast.length > 15 ? 15 : cast.length, // Show top 15
+                itemCount: cast.length > 15 ? 15 : cast.length,
                 itemBuilder: (context, index) {
                   final actor = cast[index];
                   final profilePath = actor['profile_path'];
@@ -332,7 +350,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
                       children: [
                         CircleAvatar(
                           radius: 35,
-                          backgroundColor: Colors.grey.withOpacity(0.2),
+                          backgroundColor: Colors.grey.withValues(alpha: 0.2),
                           backgroundImage: profilePath != null 
                               ? NetworkImage("${Constants.imageUrl}$profilePath") 
                               : null,
@@ -362,7 +380,7 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   String _formatDate(String? date) {
     if (date == null || date.isEmpty) return "N/A";
     try {
-      return date.split('-')[0]; // Just return the year
+      return date.split('-')[0];
     } catch (e) {
       return date;
     }
@@ -379,6 +397,6 @@ class _MovieDetailScreenState extends State<MovieDetailScreen> {
   }
 
   Widget _verticalDivider(BuildContext context) {
-    return Container(height: 30, width: 1, color: Colors.grey.withOpacity(0.3));
+    return Container(height: 30, width: 1, color: Colors.grey.withValues(alpha: 0.3));
   }
 }

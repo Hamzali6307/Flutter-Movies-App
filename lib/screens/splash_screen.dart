@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/service_locator.dart';
-import '../services/remote_config_service.dart';
-import '../utils/constants.dart';
-import '../providers/theme_provider.dart';
+import 'package:test_app/l10n/app_localizations.dart';
+import 'package:test_app/services/service_locator.dart';
+import 'package:test_app/services/remote_config_service.dart';
+import 'package:test_app/utils/constants.dart';
+import 'package:test_app/providers/theme_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -44,6 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Widget build(BuildContext context) {
     final backgroundUrl = getIt<RemoteConfigService>().splashBackgroundUrl;
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Stack(
@@ -61,8 +63,8 @@ class _SplashScreenState extends State<SplashScreen> {
           Positioned.fill(
             child: Container(
               color: themeProvider.isDarkMode 
-                  ? Colors.black.withOpacity(0.6) 
-                  : Colors.white.withOpacity(0.4),
+                  ? Colors.black.withValues(alpha: 0.6) 
+                  : Colors.white.withValues(alpha: 0.4),
             ),
           ),
           Center(
@@ -85,15 +87,16 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                Text(
-                  "HUB MOVIE'S",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                    color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                if (l10n != null)
+                  Text(
+                    l10n.appTitle.toUpperCase(),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                      color: themeProvider.isDarkMode ? Colors.white : Colors.black,
+                    ),
                   ),
-                ),
                 const SizedBox(height: 50),
                 LoadingAnimationWidget.beat(
                   color: Colors.redAccent,

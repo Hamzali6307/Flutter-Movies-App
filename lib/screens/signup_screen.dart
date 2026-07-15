@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:test_app/l10n/app_localizations.dart';
 import 'package:test_app/services/service_locator.dart';
 import 'package:test_app/services/remote_config_service.dart';
 import 'package:test_app/services/auth_service.dart';
@@ -19,10 +20,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _isLoading = false;
 
-  void _signUp() async {
+  void _signUp(AppLocalizations l10n) async {
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match')),
+        SnackBar(content: Text(l10n.passwordsDoNotMatch)),
       );
       return;
     }
@@ -39,7 +40,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     } else {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration Failed')),
+          SnackBar(content: Text(l10n.registrationFailed)),
         );
       }
     }
@@ -48,6 +49,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final backgroundUrl = getIt<RemoteConfigService>().authBackgroundUrl;
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
       body: Stack(
@@ -65,7 +68,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
             ),
           ),
           // Content
@@ -95,9 +98,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                   ),
                   const SizedBox(height: 50),
-                  const Text(
-                    "SignUp",
-                    style: TextStyle(
+                  Text(
+                    l10n.signUp,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -107,13 +110,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   TextField(
                     controller: _emailController,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: 'Email',
-                      hintStyle: TextStyle(color: Colors.white70),
-                      enabledBorder: UnderlineInputBorder(
+                    decoration: InputDecoration(
+                      hintText: l10n.email,
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      enabledBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white70),
                       ),
-                      focusedBorder: UnderlineInputBorder(
+                      focusedBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
@@ -123,14 +126,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _passwordController,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: 'Password',
-                      hintStyle: TextStyle(color: Colors.white70),
-                      suffixIcon: Icon(Icons.lock_outline, color: Colors.white70),
-                      enabledBorder: UnderlineInputBorder(
+                    decoration: InputDecoration(
+                      hintText: l10n.password,
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      suffixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                      enabledBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white70),
                       ),
-                      focusedBorder: UnderlineInputBorder(
+                      focusedBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
@@ -140,14 +143,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _confirmPasswordController,
                     obscureText: true,
                     style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: 'Confirm Password',
-                      hintStyle: TextStyle(color: Colors.white70),
-                      suffixIcon: Icon(Icons.lock_outline, color: Colors.white70),
-                      enabledBorder: UnderlineInputBorder(
+                    decoration: InputDecoration(
+                      hintText: l10n.confirmPassword,
+                      hintStyle: const TextStyle(color: Colors.white70),
+                      suffixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
+                      enabledBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white70),
                       ),
-                      focusedBorder: UnderlineInputBorder(
+                      focusedBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.white),
                       ),
                     ),
@@ -156,7 +159,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _signUp,
+                      onPressed: _isLoading ? null : () => _signUp(l10n),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
@@ -167,10 +170,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       child: _isLoading
                           ? LoadingAnimationWidget.beat(
-                              color: Colors.black,
+                              color: Colors.red,
                               size: 24,
                             )
-                          : const Text('Sign Up'),
+                          : Text(l10n.signUp),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -179,9 +182,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onPressed: () {
                         Navigator.pop(context);
                       },
-                      child: const Text(
-                        'Already Have Account!',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      child: Text(
+                        l10n.alreadyHaveAccount,
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),

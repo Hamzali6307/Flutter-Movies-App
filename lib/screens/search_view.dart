@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import '../models/movies.dart';
-import '../services/api_service.dart';
-import '../services/service_locator.dart';
-import '../utils/constants.dart';
+import 'package:provider/provider.dart';
+import 'package:test_app/l10n/app_localizations.dart';
+import 'package:test_app/models/movies.dart';
+import 'package:test_app/services/api_service.dart';
+import 'package:test_app/services/service_locator.dart';
+import 'package:test_app/utils/constants.dart';
+import 'package:test_app/providers/language_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'movie_detail_screen.dart';
+import 'package:test_app/screens/movie_detail_screen.dart';
 
 class SearchView extends StatefulWidget {
   final String? initialGenreId;
@@ -34,26 +37,39 @@ class _SearchViewState extends State<SearchView> {
   bool _isFetchingMore = false;
   int _currentPage = 1;
   bool _hasNextPage = true;
+  String? _lastLanguageCode;
+  String? _selectedGenreId;
 
   final List<Map<String, String>> _quickGenres = [
-    {'id': '28', 'name': 'Action'},
-    {'id': '35', 'name': 'Comedy'},
-    {'id': '27', 'name': 'Horror'},
-    {'id': '878', 'name': 'Sci-Fi'},
-    {'id': '16', 'name': 'Animation'},
-    {'id': '10749', 'name': 'Romance'},
+    {'id': '28', 'key': 'action'},
+    {'id': '12', 'key': 'adventure'},
+    {'id': '16', 'key': 'animated'},
+    {'id': '35', 'key': 'comedy'},
+    {'id': '80', 'key': 'crime'},
+    {'id': '10751', 'key': 'family'},
+    {'id': '27', 'key': 'horror'},
+    {'id': '9648', 'key': 'mystery'},
+    {'id': '10749', 'key': 'romance'},
+    {'id': '878', 'key': 'sciFi'},
   ];
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    
-    if (widget.initialGenreId != null || widget.initialSearchType != null) {
+    _selectedGenreId = widget.initialGenreId;
+    if (widget.initialTitle != null) {
+      _searchController.text = widget.initialTitle ?? '';
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = Provider.of<LanguageProvider>(context).locale.languageCode;
+    if (_lastLanguageCode != languageCode) {
+      _lastLanguageCode = languageCode;
       _loadMovies();
-      if (widget.initialTitle != null) {
-        _searchController.text = widget.initialTitle!;
-      }
     }
   }
 
@@ -73,7 +89,9 @@ class _SearchViewState extends State<SearchView> {
     }
   }
 
-  Future<void> _loadMovies({bool isNextPage = false, String? genreOverride}) async {
+  String _getTmdbLanguage(String code) => code == 'hi' ? 'hi-IN' : 'en-US';
+
+  Future<void> _loadMovies({bool isNextPage = false}) async {
     if (!isNextPage) {
       setState(() {
         _isLoading = true;
@@ -88,17 +106,17 @@ class _SearchViewState extends State<SearchView> {
     Movies? results;
     final api = getIt<ApiService>();
     final query = _searchController.text.trim();
-    final effectiveGenreId = genreOverride ?? widget.initialGenreId;
+    final tmdbLang = _getTmdbLanguage(Provider.of<LanguageProvider>(context, listen: false).locale.languageCode);
 
     try {
       if (query.isNotEmpty) {
-        results = await api.searchMovies(query, page: _currentPage);
-      } else if (effectiveGenreId != null) {
-        results = await api.getMovies(page: _currentPage, genreId: effectiveGenreId);
+        results = await api.searchMovies(query, page: _currentPage, language: tmdbLang);
+      } else if (_selectedGenreId != null) {
+        results = await api.getMovies(page: _currentPage, genreId: _selectedGenreId, language: tmdbLang);
       } else if (widget.initialSearchType == 'top_rated') {
-        results = await api.getTopRatedMovies(page: _currentPage);
+        results = await api.getTopRatedMovies(page: _currentPage, language: tmdbLang);
       } else {
-        results = await api.getMovies(page: _currentPage);
+        results = await api.getMovies(page: _currentPage, language: tmdbLang);
       }
 
       if (mounted) {
@@ -111,7 +129,7 @@ class _SearchViewState extends State<SearchView> {
             _searchResults = newItems;
             _isLoading = false;
           }
-          _hasNextPage = newItems.isNotEmpty;
+          _hasNextPage = newItems.length >= 20;
         });
       }
     } catch (e) {
@@ -127,14 +145,35 @@ class _SearchViewState extends State<SearchView> {
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (query.isNotEmpty && _selectedGenreId != null) {
+        setState(() => _selectedGenreId = null);
+      }
       _loadMovies();
     });
+  }
+
+  String _getLocalizedGenreName(String key, AppLocalizations l10n) {
+    switch (key) {
+      case 'action': return l10n.action;
+      case 'adventure': return l10n.adventure;
+      case 'animated': return l10n.animated;
+      case 'comedy': return l10n.comedy;
+      case 'crime': return l10n.crime;
+      case 'family': return l10n.family;
+      case 'horror': return l10n.horror;
+      case 'mystery': return l10n.mystery;
+      case 'romance': return l10n.romance;
+      case 'sciFi': return l10n.sciFi;
+      default: return key;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const SizedBox.shrink();
 
     return Scaffold(
       body: Column(
@@ -145,7 +184,7 @@ class _SearchViewState extends State<SearchView> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search for movies...',
+                hintText: l10n.searchMovies,
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty 
                   ? IconButton(
@@ -161,7 +200,9 @@ class _SearchViewState extends State<SearchView> {
                   borderSide: BorderSide.none
                 ),
                 filled: true,
-                fillColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                fillColor: isDark 
+                    ? Colors.white.withValues(alpha: 0.1) 
+                    : Colors.black.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -174,23 +215,36 @@ class _SearchViewState extends State<SearchView> {
               itemCount: _quickGenres.length,
               itemBuilder: (context, index) {
                 final genre = _quickGenres[index];
+                final isSelected = _selectedGenreId == genre['id'];
+                final genreKey = genre['key'];
+                if (genreKey == null) return const SizedBox.shrink();
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: ActionChip(
+                  child: ChoiceChip(
                     label: Text(
-                      genre['name']!, 
+                      _getLocalizedGenreName(genreKey, l10n), 
                       style: TextStyle(
                         fontSize: 12,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       )
                     ),
-                    backgroundColor: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      _searchController.clear();
+                      setState(() {
+                        _selectedGenreId = selected ? genre['id'] : null;
+                      });
+                      _loadMovies();
+                    },
+                    selectedColor: Colors.redAccent,
+                    backgroundColor: isDark 
+                        ? Colors.white.withValues(alpha: 0.1) 
+                        : Colors.black.withValues(alpha: 0.05),
                     side: BorderSide.none,
                     shape: const StadiumBorder(),
-                    onPressed: () {
-                      _searchController.clear();
-                      _loadMovies(genreOverride: genre['id']);
-                    },
+                    showCheckmark: false,
                   ),
                 );
               },
@@ -207,10 +261,10 @@ class _SearchViewState extends State<SearchView> {
                     ),
                   )
                 : _searchResults.isEmpty
-                    ? const Center(
+                    ? Center(
                         child: Text(
-                          "No results found.",
-                          style: TextStyle(color: Colors.grey),
+                          l10n.noResults,
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       )
                     : GridView.builder(
@@ -218,7 +272,7 @@ class _SearchViewState extends State<SearchView> {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
-                          childAspectRatio: 0.7,
+                          childAspectRatio: 0.6,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 10,
                         ),
@@ -234,23 +288,58 @@ class _SearchViewState extends State<SearchView> {
                           }
                           final movie = _searchResults[index];
                           return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context, 
-                              MaterialPageRoute(builder: (context) => MovieDetailScreen(movieId: movie.id!.toInt()))
-                            ),
-                            child: Hero(
-                              tag: 'movie_${movie.id}',
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: CachedNetworkImage(
-                                  imageUrl: movie.posterPath != null 
-                                      ? "${Constants.imageUrl}${movie.posterPath}" 
-                                      : "https://via.placeholder.com/150",
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(color: isDark ? Colors.grey[900] : Colors.grey[200]),
-                                  errorWidget: (context, url, error) => const Icon(Icons.error),
+                            onTap: () {
+                              if (movie.id != null) {
+                                Navigator.push(
+                                  context, 
+                                  MaterialPageRoute(builder: (context) => MovieDetailScreen(movieId: movie.id!))
+                                );
+                              }
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Hero(
+                                    tag: 'movie_${movie.id}',
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: CachedNetworkImage(
+                                        imageUrl: movie.posterPath != null 
+                                            ? "${Constants.imageUrl}${movie.posterPath}" 
+                                            : "https://via.placeholder.com/150",
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        placeholder: (context, url) => Container(color: isDark ? Colors.grey[900] : Colors.grey[200]),
+                                        errorWidget: (context, url, error) => const Icon(Icons.error),
+                                      ),
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  movie.originalTitle ?? '',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, color: Colors.amber, size: 14),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      (movie.voteAverage ?? 0.0).toStringAsFixed(1),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           );
                         },

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-import '../models/movies.dart';
-import '../models/trending_movies.dart';
-import '../services/api_service.dart';
-import '../services/service_locator.dart';
-import '../utils/constants.dart';
+import 'package:provider/provider.dart';
+import 'package:test_app/l10n/app_localizations.dart';
+import 'package:test_app/models/movies.dart';
+import 'package:test_app/models/trending_movies.dart';
+import 'package:test_app/services/api_service.dart';
+import 'package:test_app/services/service_locator.dart';
+import 'package:test_app/utils/constants.dart';
+import 'package:test_app/providers/language_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'movie_detail_screen.dart';
+import 'package:test_app/screens/movie_detail_screen.dart';
 
 class HomeView extends StatefulWidget {
   final Function(String? genreId, String? title, String? type)? onSeeAll;
@@ -18,14 +21,21 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  late Future<TrendingMovies?> _trendingMovies;
+  Future<TrendingMovies?>? _trendingMovies;
   final apiService = getIt<ApiService>();
+  String? _lastLanguageCode;
 
   @override
-  void initState() {
-    super.initState();
-    _trendingMovies = apiService.getTrendingMovies('day');
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final languageCode = Provider.of<LanguageProvider>(context).locale.languageCode;
+    if (_lastLanguageCode != languageCode) {
+      _lastLanguageCode = languageCode;
+      _trendingMovies = apiService.getTrendingMovies('day', language: _getTmdbLanguage(languageCode));
+    }
   }
+
+  String _getTmdbLanguage(String code) => code == 'hi' ? 'hi-IN' : 'en-US';
 
   void _navigateToDetail(int? id) {
     if (id != null) {
@@ -38,39 +48,46 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (l10n == null) return const Center(child: CircularProgressIndicator());
+    
+    final languageCode = Provider.of<LanguageProvider>(context).locale.languageCode;
+    final tmdbLang = _getTmdbLanguage(languageCode);
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildTrendingSection(),
-          _buildRow("Featured", "Today", (p) => apiService.getTopRatedMovies(page: p), null, 'top_rated'),
-          _buildRow("Action", "Packed", (p) => apiService.getMovies(page: p, genreId: '28'), '28', 'genre'),
-          _buildRow("Animated", "World", (p) => apiService.getMovies(page: p, genreId: '16'), '16', 'genre'),
-          _buildRow("Comedy", "Laughter", (p) => apiService.getMovies(page: p, genreId: '35'), '35', 'genre'),
-          _buildRow("Horror", "Night", (p) => apiService.getMovies(page: p, genreId: '27'), '27', 'genre'),
-          _buildRow("Sci-Fi", "Future", (p) => apiService.getMovies(page: p, genreId: '878'), '878', 'genre'),
-          _buildRow("Adventure", "Quest", (p) => apiService.getMovies(page: p, genreId: '12'), '12', 'genre'),
-          _buildRow("Mystery", "Solving", (p) => apiService.getMovies(page: p, genreId: '9648'), '9648', 'genre'),
-          _buildRow("Crime", "Stories", (p) => apiService.getMovies(page: p, genreId: '80'), '80', 'genre'),
-          _buildRow("Family", "Friendly", (p) => apiService.getMovies(page: p, genreId: '10751'), '10751', 'genre'),
-          _buildRow("Standard", "Movies", (p) => apiService.getMovies(page: p), null, 'discover'),
+          _buildTrendingSection(l10n),
+          _buildRow(l10n.featured, l10n.today, (p) => apiService.getTopRatedMovies(page: p, language: tmdbLang), null, 'top_rated', l10n),
+          _buildRow(l10n.action, l10n.packed, (p) => apiService.getMovies(page: p, genreId: '28', language: tmdbLang), '28', 'genre', l10n),
+          _buildRow(l10n.animated, l10n.world, (p) => apiService.getMovies(page: p, genreId: '16', language: tmdbLang), '16', 'genre', l10n),
+          _buildRow(l10n.comedy, l10n.laughter, (p) => apiService.getMovies(page: p, genreId: '35', language: tmdbLang), '35', 'genre', l10n),
+          _buildRow(l10n.horror, l10n.night, (p) => apiService.getMovies(page: p, genreId: '27', language: tmdbLang), '27', 'genre', l10n),
+          _buildRow(l10n.sciFi, l10n.future, (p) => apiService.getMovies(page: p, genreId: '878', language: tmdbLang), '878', 'genre', l10n),
+          _buildRow(l10n.adventure, l10n.quest, (p) => apiService.getMovies(page: p, genreId: '12', language: tmdbLang), '12', 'genre', l10n),
+          _buildRow(l10n.mystery, l10n.solving, (p) => apiService.getMovies(page: p, genreId: '9648', language: tmdbLang), '9648', 'genre', l10n),
+          _buildRow(l10n.crime, l10n.stories, (p) => apiService.getMovies(page: p, genreId: '80', language: tmdbLang), '80', 'genre', l10n),
+          _buildRow(l10n.family, l10n.friendly, (p) => apiService.getMovies(page: p, genreId: '10751', language: tmdbLang), '10751', 'genre', l10n),
+          _buildRow(l10n.standard, l10n.movies, (p) => apiService.getMovies(page: p, language: tmdbLang), null, 'discover', l10n),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildRow(String title, String subtitle, Future<Movies?> Function(int) fetch, String? genreId, String type) {
+  Widget _buildRow(String title, String subtitle, Future<Movies?> Function(int) fetch, String? genreId, String type, AppLocalizations l10n) {
     return _PaginatedCategoryRow(
       title: title,
       subtitle: subtitle,
       fetchData: fetch,
       onSeeAll: () => widget.onSeeAll?.call(genreId, title, type),
       onMovieTap: _navigateToDetail,
+      seeAllText: l10n.seeAll,
     );
   }
 
-  Widget _buildTrendingSection() {
+  Widget _buildTrendingSection(AppLocalizations l10n) {
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,9 +101,12 @@ class _HomeViewState extends State<HomeView> {
                 fontWeight: FontWeight.bold, 
                 color: theme.textTheme.titleLarge?.color
               ),
-              children: const [
-                TextSpan(text: "Trending "),
-                TextSpan(text: "Now", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.normal)),
+              children: [
+                TextSpan(text: "${l10n.trendingNow.split(' ')[0]} "),
+                TextSpan(
+                  text: l10n.trendingNow.contains(' ') ? l10n.trendingNow.split(' ').sublist(1).join(' ') : "", 
+                  style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.normal)
+                ),
               ],
             ),
           ),
@@ -126,7 +146,7 @@ class _HomeViewState extends State<HomeView> {
                               height: 300,
                               width: 200,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(color: Colors.grey.withOpacity(0.1)),
+                              placeholder: (context, url) => Container(color: Colors.grey.withValues(alpha: 0.1)),
                               errorWidget: (context, url, error) => const Icon(Icons.error),
                             ),
                           ),
@@ -161,6 +181,7 @@ class _PaginatedCategoryRow extends StatefulWidget {
   final Future<Movies?> Function(int page) fetchData;
   final VoidCallback onSeeAll;
   final Function(int? id) onMovieTap;
+  final String seeAllText;
 
   const _PaginatedCategoryRow({
     required this.title,
@@ -168,6 +189,7 @@ class _PaginatedCategoryRow extends StatefulWidget {
     required this.fetchData,
     required this.onSeeAll,
     required this.onMovieTap,
+    required this.seeAllText,
   });
 
   @override
@@ -255,7 +277,7 @@ class _PaginatedCategoryRowState extends State<_PaginatedCategoryRow> {
               ),
               TextButton(
                 onPressed: widget.onSeeAll, 
-                child: const Text("See All", style: TextStyle(color: Colors.grey))
+                child: Text(widget.seeAllText, style: const TextStyle(color: Colors.grey))
               ),
             ],
           ),
@@ -297,7 +319,7 @@ class _PaginatedCategoryRowState extends State<_PaginatedCategoryRow> {
                         child: CachedNetworkImage(
                           imageUrl: "${Constants.imageUrl}${movie.posterPath}",
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(color: Colors.grey.withOpacity(0.1)),
+                          placeholder: (context, url) => Container(color: Colors.grey.withValues(alpha: 0.1)),
                           errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
                         ),
                       ),
