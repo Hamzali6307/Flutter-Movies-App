@@ -68,6 +68,16 @@ This project uses The Movie Database (TMDB) API.
 
 https://developer.themoviedb.org/
 
+** POT'S
+<img width="1080" height="2400" alt="image" src="https://github.com/user-attachments/assets/a9914590-d42e-4fd0-9b09-01ca6023c70a" />
+<img width="1080" height="2400" alt="image" src="https://github.com/user-attachments/assets/6c416ae9-1cbb-471e-bbf2-12ddfe32f709" />
+<img width="1080" height="2400" alt="image" src="https://github.com/user-attachments/assets/70dad1a9-d31b-4ce3-a6ae-7046797650ca" />
+<img width="1080" height="2400" alt="image" src="https://github.com/user-attachments/assets/a519ba16-53c1-4fb8-963b-eadcb98a18ff" />
+
+
+
+
+
 ## 🎯 Purpose
 
 The main goal of this project is to improve Flutter development skills by implementing production-level architecture and best practices while working with a real-world API.
