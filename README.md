@@ -69,10 +69,11 @@ This project uses The Movie Database (TMDB) API.
 https://developer.themoviedb.org/
 
 ** POT'S
-<img width="500" height="1000" alt="image" src="https://github.com/user-attachments/assets/a9914590-d42e-4fd0-9b09-01ca6023c70a" />
-<img width="500" height="1000" alt="image" src="https://github.com/user-attachments/assets/6c416ae9-1cbb-471e-bbf2-12ddfe32f709" />
-<img width="500" height="1000" alt="image" src="https://github.com/user-attachments/assets/70dad1a9-d31b-4ce3-a6ae-7046797650ca" />
-<img width="500" height="1000" alt="image" src="https://github.com/user-attachments/assets/a519ba16-53c1-4fb8-963b-eadcb98a18ff" />
+
+<img width="200" height="600" alt="image" src="https://github.com/user-attachments/assets/a9914590-d42e-4fd0-9b09-01ca6023c70a" />
+<img width="200" height="600" alt="image" src="https://github.com/user-attachments/assets/6c416ae9-1cbb-471e-bbf2-12ddfe32f709" />
+<img width="200" height="600" alt="image" src="https://github.com/user-attachments/assets/70dad1a9-d31b-4ce3-a6ae-7046797650ca" />
+<img width="200" height="600" alt="image" src="https://github.com/user-attachments/assets/a519ba16-53c1-4fb8-963b-eadcb98a18ff" />
 
 
 
